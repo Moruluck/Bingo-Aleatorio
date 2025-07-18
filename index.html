@@ -122,6 +122,13 @@
             word-break: break-word; /* Breaks long words if necessary */
             color: black; /* Black text color inside cells */
             border-radius: 0; /* Non-rounded borders for each cell */
+            cursor: pointer; /* Add cursor pointer to indicate interactivity */
+            transition: background-color 0.2s ease; /* Smooth transition for background color */
+        }
+
+        /* Style for marked cells */
+        .bingo-cell.marked {
+            background-color: #B0C4DE; /* LightSteelBlue, a slightly darker shade of lilac */
         }
 
         .song-title {
@@ -147,6 +154,52 @@
             font-size: 1.3em; /* Increased font size for the hashtag */
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* Shadow to highlight */
             padding-right: 5px; /* Small padding to separate from the right edge */
+        }
+
+        /* Styles for the BINGO animation overlay */
+        #bingoAnimationOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Ensure it's on top of everything */
+            opacity: 0; /* Start hidden */
+            pointer-events: none; /* Allow clicks to pass through when hidden */
+            transition: opacity 0.5s ease-in-out; /* Smooth fade-in/out */
+        }
+
+        #bingoAnimationOverlay.show {
+            opacity: 1; /* Show the overlay */
+            pointer-events: auto; /* Enable clicks when visible */
+        }
+
+        #bingoAnimationOverlay .bingo-message {
+            font-family: 'Arial', sans-serif;
+            font-size: 5em; /* Large font size for BINGO */
+            color: #FFD700; /* Gold color */
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+            animation: popIn 0.5s ease-out forwards; /* Pop-in animation */
+            transform: scale(0); /* Start scaled down */
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            80% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         /* Media queries for screen responsiveness */
@@ -189,6 +242,9 @@
                 font-size: 1.2em; /* Adjusted hashtag size on mobile */
                 padding-right: 3px;
             }
+            #bingoAnimationOverlay .bingo-message {
+                font-size: 3em; /* Smaller font size for BINGO on mobile */
+            }
         }
 
         /* Specific styles for printing */
@@ -226,12 +282,24 @@
                 color: #0A0A40 !important; /* Cosmic blue for artist name in print */
                 text-shadow: none !important; /* Ensure no text-shadow/outline in print */
             }
+            .bingo-cell.marked {
+                background-color: #B0C4DE !important; /* Ensure marked color prints */
+            }
+            /* Hide bingo animation overlay when printing */
+            #bingoAnimationOverlay {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
     <div id="bingoCardContainer">
         <!-- The random bingo card will be generated here -->
+    </div>
+
+    <!-- BINGO Animation Overlay -->
+    <div id="bingoAnimationOverlay">
+        <div class="bingo-message">¡BINGO!</div>
     </div>
 
     <script>
@@ -339,6 +407,32 @@
             return shuffled.slice(0, count); // Takes the first 'count' songs
         }
 
+        // Function to display the BINGO animation
+        function showBingoAnimation() {
+            const overlay = document.getElementById('bingoAnimationOverlay');
+            overlay.classList.add('show'); // Add 'show' class to fade in
+
+            // Hide the animation after 3 seconds
+            setTimeout(() => {
+                overlay.classList.remove('show'); // Remove 'show' class to fade out
+            }, 3000);
+        }
+
+        // Function to check if all cells are marked for Bingo
+        function checkBingo() {
+            const cells = document.querySelectorAll('.bingo-cell');
+            let allMarked = true;
+            cells.forEach(cell => {
+                if (!cell.classList.contains('marked')) {
+                    allMarked = false;
+                }
+            });
+
+            if (allMarked) {
+                showBingoAnimation();
+            }
+        }
+
         // Function to generate a single bingo card element
         function createBingoCardElement(songs) {
             const cardWrapper = document.createElement('div');
@@ -356,6 +450,11 @@
             songs.forEach(song => {
                 const cell = document.createElement('div');
                 cell.classList.add('bingo-cell');
+                // Add click event listener to toggle 'marked' class and check for bingo
+                cell.addEventListener('click', function() {
+                    this.classList.toggle('marked');
+                    checkBingo(); // Check for bingo after each click
+                });
                 const artistText = song.artist ? song.artist : '';
                 cell.innerHTML = `<div class="song-title">${song.title}</div><div class="song-artist">${artistText}</div>`;
                 gridContainer.appendChild(cell);
