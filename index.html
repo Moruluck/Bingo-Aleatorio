@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Cartón de Bingo Musical Aleatorio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluir Tone.js para la generación de sonido -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Define the Arial font */
         @import url('https://fonts.googleapis.com/css2?family=Arial:wght@700&family=Dancing+Script:wght@400;700&display=swap');
@@ -20,7 +22,7 @@
             /* Base lilac background for the body */
             background-color: #E0BBE4; /* Base lilac */
             /* Glitter effect overlay and Stars effect overlay */
-            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCUiIGhlaWdodD0iMTAlIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJnIjB4IiBwYXR0ZXJuVW5pdHM9idXNlclNwYWNlT25Vc2UnIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPj4KICAgICAgPGNpcmNsZSBjeD0iMi41IiBjeT0iMi41IiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIxIi8+CiAgICA8L2RlZnM+CiAgPHJlY3QgZmlsbD0idXJsKCNnMHgpIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+Cjwvc3ZnPg=='),
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCUiIGhlaWdodD0iMTAlIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJnIjB4IiBwYXR0ZXJuVW5pdHM9idXNlclNwYWNlT25Vc2UnIHdpZHRoPSI1IiBoZWlnaHQ9IjUiPj4KICAgICAgPGNpcmNsZSBjeD0iMi41IiBjeT09IjIuNSIgcj0iMS41IiBmaWxsPSJ3aGl0ZSIgb3BhY2l1dHk9IjEiLz4KICAgIDwvZGVmcz4KICA8cmVjdCBmaWxsPSJ1cmwoI2cweCkiIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiLz4KPC9zdmc+'),
                             url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCUiIGhlaWdodD0iMjAlIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJzdGFyIiBwYXR0ZXJuVW5pdHM9idXNlclNwYWNlT25Vc2UnIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CiAgICAgIDxwb2x5Z29uIHBvaW50cz0iMTAuMCwwLjAgMTIuMyw3LjcgMjAuMCw3LjcgMTMuOCwxMi40IDE2LjIsMjAuMCAxMC4wLDE1LjMgMy44LDIwLjAgNi4yLDEyLjQgMC40LDcuNyA3LjcsNy43IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4xIi8+CiAgICA8L2RlZnM+CiAgPHJlY3QgZmlsbD0idXJsKCNzdGFyIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIi8+Cjwvc3ZnPg==');
             background-size: 15px 15px, 50px 50px; /* Size of glitter and stars pattern */
             background-blend-mode: overlay, screen; /* Blends glitter and stars with the base color */
@@ -165,12 +167,14 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent black background */
             display: flex;
+            flex-direction: column; /* Changed to column to stack message and image */
             justify-content: center;
             align-items: center;
             z-index: 1000; /* Ensure it's on top of everything */
             opacity: 0; /* Start hidden */
             pointer-events: none; /* Allow clicks to pass through when hidden */
             transition: opacity 0.5s ease-in-out; /* Smooth fade-in/out */
+            overflow: hidden; /* Hide overflowing particles */
         }
 
         #bingoAnimationOverlay.show {
@@ -181,24 +185,105 @@
         #bingoAnimationOverlay .bingo-message {
             font-family: 'Arial', sans-serif;
             font-size: 5em; /* Large font size for BINGO */
-            color: #FFD700; /* Gold color */
+            color: #CC99CC; /* Lighter lilac color */
             text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5); /* Stronger shadow */
-            animation: popIn 0.5s ease-out forwards; /* Pop-in animation */
-            transform: scale(0); /* Start scaled down */
+            animation: zoomOutFadeIn 1s ease-out forwards; /* New animation */
+            transform: scale(3); /* Start zoomed in */
+            opacity: 0; /* Start hidden */
+            position: relative; /* For z-index over particles */
+            z-index: 1001; /* Ensure message is above particles */
+            margin-bottom: 20px; /* Space between BINGO message and image */
         }
 
-        @keyframes popIn {
+        /* Taylor Swift image style */
+        .taylor-swift-bingo-image {
+            width: 150px; /* Adjust size as needed */
+            height: auto;
+            border-radius: 10px; /* Slightly rounded corners for the image */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Add shadow for depth */
+            animation: zoomOutFadeIn 1s ease-out forwards 0.3s; /* New animation, slightly delayed */
+            opacity: 0; /* Start hidden */
+            transform: scale(3); /* Start zoomed in */
+        }
+
+        /* New animation keyframes */
+        @keyframes zoomOutFadeIn {
             0% {
-                transform: scale(0);
+                transform: scale(3);
                 opacity: 0;
-            }
-            80% {
-                transform: scale(1.1);
-                opacity: 1;
             }
             100% {
                 transform: scale(1);
                 opacity: 1;
+            }
+        }
+
+        /* Star particle styles */
+        .star-particle {
+            position: absolute;
+            background-color: #FFD700; /* Gold color for stars */
+            border-radius: 50%;
+            opacity: 0;
+            animation: starFadeOut 2s forwards;
+            filter: blur(0.5px); /* Soften the stars */
+        }
+
+        @keyframes starFadeOut {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Confetti particle styles */
+        .confetti-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--confetti-color);
+            opacity: 0;
+            animation: confettiFall 3s forwards;
+            border-radius: 2px;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Firework particle styles */
+        .firework-particle {
+            position: absolute;
+            width: 12px; /* Even larger size */
+            height: 12px; /* Even larger size */
+            background-color: var(--firework-color);
+            border-radius: 50%;
+            opacity: 0;
+            animation: fireworkExplosion 2s ease-out forwards; /* Slightly longer duration */
+        }
+
+        @keyframes fireworkExplosion {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                transform: translate(0, 0) scale(1.5); /* Even bigger initial pop */
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--fx), var(--fy)) scale(0.4); /* Bigger final scale */
+                opacity: 0;
             }
         }
 
@@ -244,6 +329,9 @@
             }
             #bingoAnimationOverlay .bingo-message {
                 font-size: 3em; /* Smaller font size for BINGO on mobile */
+            }
+            .taylor-swift-bingo-image {
+                width: 100px; /* Smaller image on mobile */
             }
         }
 
@@ -300,6 +388,8 @@
     <!-- BINGO Animation Overlay -->
     <div id="bingoAnimationOverlay">
         <div class="bingo-message">¡BINGO!</div>
+        <img src="https://i.imgur.com/2wCmpY5.png" alt="Taylor Swift" class="taylor-swift-bingo-image">
+        <!-- Particles will be generated by JS -->
     </div>
 
     <script>
@@ -401,21 +491,136 @@
             { title: "Bajos Instintos", artist: "Airbag" } /* New song added */
         ];
 
+        // Initialize Tone.js components
+        let synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: {
+                type: "triangle" // A softer, more pleasant waveform
+            },
+            envelope: {
+                attack: 0.005,
+                decay: 0.1,
+                sustain: 0.05,
+                release: 0.5
+            }
+        }).toDestination();
+
+        // Add some reverb for a richer sound
+        let reverb = new Tone.Reverb({
+            decay: 1.5,
+            preDelay: 0.01
+        }).toDestination();
+        synth.connect(reverb);
+
         // Function to get an array of random songs without repetition
         function getRandomSongs(songs, count) {
             const shuffled = [...songs].sort(() => 0.5 - Math.random()); // Shuffles the array
             return shuffled.slice(0, count); // Takes the first 'count' songs
         }
 
-        // Function to display the BINGO animation
+        // Function to play a celebratory sound
+        function playBingoSound() {
+            // Ensure Tone.js context is started (required for user interaction)
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+
+            // Play a short, ascending chord
+            const now = Tone.now();
+            synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+            synth.triggerAttackRelease(["C6", "E6", "G6"], "8n", now + 0.1);
+        }
+
+        // Function to display the BINGO animation with stars, confetti, and fireworks
         function showBingoAnimation() {
             const overlay = document.getElementById('bingoAnimationOverlay');
-            overlay.classList.add('show'); // Add 'show' class to fade in
+            const bingoMessage = document.querySelector('#bingoAnimationOverlay .bingo-message');
+            const taylorImage = document.querySelector('.taylor-swift-bingo-image');
 
-            // Hide the animation after 3 seconds
+            // Reset styles for a fresh animation
+            bingoMessage.style.animation = 'none';
+            taylorImage.style.animation = 'none';
+
+            bingoMessage.style.opacity = '0';
+            taylorImage.style.opacity = '0';
+            bingoMessage.style.transform = 'scale(3)'; // Reset transform for zoomOutFadeIn
+            taylorImage.style.transform = 'scale(3)'; // Reset transform for zoomOutFadeIn
+
+
+            // 1. Show the main overlay
+            overlay.classList.add('show');
+            playBingoSound(); // Play sound when overlay appears
+
+            // 2. Start BINGO message and Taylor Swift image animation
+            bingoMessage.style.opacity = '1';
+            bingoMessage.style.animation = 'zoomOutFadeIn 1s ease-out forwards';
+
+            taylorImage.style.opacity = '1';
+            taylorImage.style.animation = 'zoomOutFadeIn 1s ease-out forwards 0.3s'; // Slightly delayed
+
+            // Particle effects
+            // Clear any existing particles
+            overlay.querySelectorAll('.star-particle, .confetti-particle, .firework-particle').forEach(p => p.remove());
+
+            // Create stars
+            for (let i = 0; i < 30; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star-particle');
+                const size = Math.random() * 8 + 2; // Random size between 2px and 10px
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--x', `${(Math.random() - 0.5) * 400}px`); // Random horizontal movement
+                star.style.setProperty('--y', `${(Math.random() - 0.5) * 400}px`); // Random vertical movement
+                star.style.animationDelay = `${Math.random() * 0.5}s`;
+                overlay.appendChild(star);
+            }
+
+            // Create confetti
+            const confettiColors = ['#FFC0CB', '#FF69B4', '#FF1493', '#DB7093', '#C71585']; // Shades of pink/purple
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti-particle');
+                const size = Math.random() * 10 + 5; // Random size between 5px and 15px
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = `${Math.random() * 100}%`;
+                confetti.style.setProperty('--confetti-color', confettiColors[Math.floor(Math.random() * confettiColors.length)]);
+                confetti.style.setProperty('--x', `${(Math.random() - 0.5) * 600}px`); // Random horizontal movement
+                confetti.style.setProperty('--y', `${(Math.random() * 500) + 100}px`); // Fall downwards
+                confetti.style.animationDelay = `${Math.random() * 0.8}s`;
+                overlay.appendChild(confetti);
+            }
+
+            // Create fireworks
+            const fireworkColors = ['#FF4500', '#FFD700', '#ADFF2F', '#1E90FF', '#BA55D3']; // Various bright colors
+            for (let i = 0; i < 5; i++) { // Create 5 firework bursts
+                const fireworkX = Math.random() * window.innerWidth;
+                const fireworkY = Math.random() * window.innerHeight;
+
+                for (let j = 0; j < 20; j++) { // Each burst has 20 particles
+                    const particle = document.createElement('div');
+                    particle.classList.add('firework-particle');
+                    particle.style.left = `${fireworkX}px`;
+                    particle.style.top = `${fireworkY}px`;
+                    particle.style.setProperty('--firework-color', fireworkColors[Math.floor(Math.random() * fireworkColors.length)]);
+                    
+                    // Random direction for explosion
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 150 + 80; // Increased distance for larger spread
+                    particle.style.setProperty('--fx', `${Math.cos(angle) * distance}px`);
+                    particle.style.setProperty('--fy', `${Math.sin(angle) * distance}px`);
+                    
+                    particle.style.animationDelay = `${i * 0.3 + Math.random() * 0.2}s`; // Stagger delays for multiple bursts
+                    overlay.appendChild(particle);
+                }
+            }
+
+            // Hide the animation after a total duration (e.g., 3 seconds for zoomOutFadeIn and particles)
             setTimeout(() => {
                 overlay.classList.remove('show'); // Remove 'show' class to fade out
-            }, 3000);
+            }, 3000); // Total duration for all animations
         }
 
         // Function to check if all cells are marked for Bingo
